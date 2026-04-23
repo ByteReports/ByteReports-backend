@@ -13,16 +13,15 @@ def get_disco_info():
         
         # Hardware: Discos físicos
         for disco in w.Win32_DiskDrive():
-            # Tenta descobrir se é SSD ou HDD
             tipo = "Desconhecido"
-            if disco.MediaType:
-                if "Fixed" in disco.MediaType:
-                    tipo = "HDD/SSD" # Win32_DiskDrive não diferencia bem NVMe, requer Win32_PhysicalMedia
-                    
+            if disco.MediaType and "Fixed" in disco.MediaType:
+                tipo = "HDD/SSD"
+                
             d = {
                 "modelo": disco.Model,
                 "tamanho_gb": bytes_para_gb(disco.Size),
-                "tipo_interface": disco.InterfaceType # IDE, USB, SCSI, NVMe
+                "tipo_interface": disco.InterfaceType,
+                "saude_smart": disco.Status # Retorna "OK" ou indica falha iminente
             }
             info["discos_fisicos"].append(d)
             

@@ -2,6 +2,11 @@ import wmi
 import psutil
 from utils import bytes_para_gb, coletar_media
 
+def obter_tipo_ddr(codigo):
+    # Tabela de códigos SMBIOSMemoryType para gerações de RAM
+    tipos = {20: "DDR", 21: "DDR2", 24: "DDR3", 26: "DDR4", 34: "DDR5"}
+    return tipos.get(codigo, "Desconhecido")
+
 def get_ram_info():
     info = {
         "total_gb": 0.0,
@@ -12,20 +17,17 @@ def get_ram_info():
     try:
         mem_virtual = psutil.virtual_memory()
         info["total_gb"] = bytes_para_gb(mem_virtual.total)
-
-        # Média do uso ao longo de SEGUNDOS_MEDIA
-        info["uso_medio_porcento"] = coletar_media(
-            lambda: psutil.virtual_memory().percent
-        )
+        info["uso_medio_porcento"] = coletar_media(lambda: psutil.virtual_memory().percent)
         
-        # Detalhes de cada pente físico (Stick)
         w = wmi.WMI()
         for stick in w.Win32_PhysicalMemory():
+            tipo_ddr = obter_tipo_ddr(stick.SMBIOSMemoryType)
             pente = {
                 "fabricante": stick.Manufacturer,
                 "capacidade_gb": bytes_para_gb(stick.Capacity),
                 "velocidade_mhz": stick.Speed,
-                "localizacao": stick.DeviceLocator # Ex: DIMM 1
+                "tipo": tipo_ddr,
+                "localizacao": stick.DeviceLocator
             }
             info["pentes_fisicos"].append(pente)
             
