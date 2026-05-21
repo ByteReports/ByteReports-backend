@@ -1,32 +1,26 @@
-from placa_mae import get_placa_mae_info
-from cpu import get_cpu_info
-from ram import get_ram_info
-from disco import get_disco_info
-from gpu import get_gpu_info
-from diagnostico import gerar_sugestoes # NOVO IMPORT
-import json
+from flask import Flask, jsonify
+from flask_cors import CORS
+import cpu, ram, disco, gpu, placa_mae, diagnostico
+import sistema, bateria, rede
 
-def gerar_relatorio_geral():
+app = Flask(__name__)
+CORS(app)
+
+@app.route('/api/hardware', methods=['GET'])
+def hardware():
     relatorio = {
-        "placa_mae": get_placa_mae_info(),
-        "cpu": get_cpu_info(),
-        "ram": get_ram_info(),
-        "armazenamento": get_disco_info(),
-        "video": get_gpu_info()
+        "cpu": cpu.get_cpu_info(),
+        "ram": ram.get_ram_info(),
+        "armazenamento": disco.get_disco_info(),
+        "video": gpu.get_gpu_info(),
+        "placa_mae": placa_mae.get_placa_mae_info(),
+        "sistema": sistema.get_sistema_info(),
+        "bateria": bateria.get_bateria_info(),
+        "rede": rede.get_rede_info()
     }
-    
-    # Roda o motor de diagnóstico com base nos dados coletados
-    relatorio["diagnostico_e_sugestoes"] = gerar_sugestoes(relatorio)
-    
-    # Cria o JSON
-    json_final = json.dumps(relatorio, indent=4, ensure_ascii=False)
-    
-    # Salva em um arquivo para o Front-end poder ler facilmente no teste
-    with open("relatorio_teste.json", "w", encoding="utf-8") as f:
-        f.write(json_final)
-        
-    print("Relatório gerado e salvo em 'relatorio_teste.json'.")
-    return relatorio
+    relatorio["diagnostico_e_sugestoes"] = diagnostico.gerar_sugestoes(relatorio)
+    relatorio["resumo_executivo"] = diagnostico.gerar_resumo(relatorio)
+    return jsonify(relatorio)
 
-if __name__ == "__main__":
-    gerar_relatorio_geral()
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
